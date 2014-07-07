@@ -11,28 +11,40 @@ trap "pauza_cycle" SIGUSR1
 trap "pauza" SIGSTOP
 trap "resume" SIGCONT
 
-CONF=/etc/s3-backup-dir.conf
-DIR_LIST_FILE=/etc/s3-backup-dir.list
-if -f [ /etc/rsync-get-backup.conf ]
-	then
-		source /etc/rsync-get-backup.conf
-fi
+CONF=/etc/b-backup/s3-dir-backup.conf
+DIR_LIST_FILE=/etc/b-backup/s3-dir-backup.list
+TMP=/
+BUCKET_NAME=backups
 
 DATE='date +%Y-%m-%d|%H:%M:%S:'
-echo "`$DATE` My PID: $$"
-echo "`$DATE` To pause use: kill -SIGHUP $$"
+
+if -f [ $CONF ]
+	then
+		source $CONF
+fi
+
+TEMP_DIR=$TMP/s3-dir-backup$$
+mkdir -p $TEMP_DIR
+function log(){
+	echo "`$DATE` $*"
+}
+
+DATE='date +%Y-%m-%d|%H:%M:%S:'
+log "My PID: $$"
+log "To pause use: kill -SIGHUP $$"
 
 function quit(){
-	echo "`$DATE` Got SIGINIT, exiting..."
+	log "Got SIGINIT, exiting..."
+	rm -rf $TEMP_DIR
 	exit 1
 }
 
 function pauza(){
 	if [ "$PAUZA" = "true" ]
 		then
-			echo "`$DATE` It is alredy paused."
+			log "It is alredy paused."
 		else
-			echo "`$DATE` I'll pause after $HOST:$DIR"
+			log "I'll pause after $HOST:$DIR"
 			PAUZA=true
 	fi
 }
@@ -40,10 +52,10 @@ function pauza(){
 function resume(){
 	if [ "$PAUZA" = "true" ]
 		then
-			echo "`$DATE` Resuming..."
+			log "Resuming..."
 			PAUZA=false
 		else
-			echo "`$DATE` Alredy working..."
+			log "Alredy working..."
 	fi
 }
 
@@ -58,27 +70,32 @@ function pauza_cycle(){
 	fi
 }
 
-for HOST in `/bin/ls $CONF`;
+for DIR in `cat $DIR_LIST_FILE`;
 	do
-		for DIR in `cat $CONF/$HOST`
-			do
-				echo "`$DATE` Backup directory $DIR from host $HOST"
-				mkdir -p $BACKUP_DIR/$HOST
-				rsync --delete -az $HOST:$DIR $BACKUP_DIR/$HOST/
-				EXIT_ERR=$?
-				# 0 = OK
-				# 24 = File changed during rsync
-				if [ $EXIT_ERR -eq 0 ] || [ $EXIT_ERR -eq 24 ]
+		log "Backup directory $DIR"
+		$FILEDATE=$(date +'%Y-%m-%d_%H%M%S')
+		BACKUP_FILE=$TEMP_DIR/$(basename $DIR)-$FILEDATE.tar.gz
+		tar -czf $BACKUP_FILE
+		EXIT_ERR=$?
+		# 0 = OK
+		if [ $EXIT_ERR -eq 0 ]
+			then
+				s3cmd put --multipart-chunk-size-mb=100 --progress --recursive --reduced-redundancy $BACKUP_FILE s3://$BUCKET_NAME > /dev/null
+				S3ERR=$?
+				if [ $S3ERR -eq 0 ]
 					then
-						echo "`$DATE` Backup $HOST:$DIR: OK"
+						log "Backup $DIR: OK"
 					else
-						echo "`$DATE` Backup $HOST:$DIR: ERROR ($EXIT_ERR)"
-				fi
-				while [ "$PAUZA" = "true" ]
-					do
-						echo "`$DATE` Paused, waiting for SIGCONT to resume"
-    						sleep 10
-				done
+						log "Backup $DIR: s3cmd ERROR ($S3ERR)"
+			else
+				log "Backup $DIR: ERROR ($EXIT_ERR)"
+		fi
+		rm $BACKUP_FILE
+		while [ "$PAUZA" = "true" ]
+			do
+				log "Paused, waiting for SIGCONT to resume"
+    				sleep 10
+		done
 		done
 	done
-
+rm -rf $TEMP_DIR
