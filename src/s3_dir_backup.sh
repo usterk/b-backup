@@ -96,6 +96,5 @@ for DIR in `cat $DIR_LIST_FILE`;
 				log "Paused, waiting for SIGCONT to resume"
     				sleep 10
 		done
-		done
 	done
 rm -rf $TEMP_DIR
