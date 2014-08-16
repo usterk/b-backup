@@ -89,4 +89,4 @@ for HOST in `/bin/ls $CONF`;
 				done
 		done
 	done
-
+rm -fr /tmp/temp_backup_conf$$

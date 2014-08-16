@@ -13,7 +13,7 @@ trap "resume" SIGCONT
 
 CONF=/etc/b-backup/s3-dir-backup.conf
 DIR_LIST_FILE=/etc/b-backup/s3-dir-backup.list
-TMP=/
+TMP=/tmp
 BUCKET_NAME=backups
 
 DATE='date +%Y-%m-%d|%H:%M:%S:'
@@ -87,6 +87,7 @@ for DIR in `cat $DIR_LIST_FILE`;
 						log "Backup $DIR: OK"
 					else
 						log "Backup $DIR: s3cmd ERROR ($S3ERR)"
+				fi
 			else
 				log "Backup $DIR: ERROR ($EXIT_ERR)"
 		fi
@@ -95,7 +96,6 @@ for DIR in `cat $DIR_LIST_FILE`;
 			do
 				log "Paused, waiting for SIGCONT to resume"
     				sleep 10
-		done
 		done
 	done
 rm -rf $TEMP_DIR
