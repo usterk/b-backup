@@ -13,12 +13,12 @@ trap "resume" SIGCONT
 
 CONF=/etc/b-backup/s3-dir-backup.conf
 DIR_LIST_FILE=/etc/b-backup/s3-dir-backup.list
-TMP=/tmp
-BUCKET_NAME=backups
+TMP=/
+BUCKET_NAME=b-backup
 
 DATE='date +%Y-%m-%d|%H:%M:%S:'
 
-if -f [ $CONF ]
+if [ -f $CONF ]
 	then
 		source $CONF
 fi
@@ -73,9 +73,9 @@ function pauza_cycle(){
 for DIR in `cat $DIR_LIST_FILE`;
 	do
 		log "Backup directory $DIR"
-		$FILEDATE=$(date +'%Y-%m-%d_%H%M%S')
+		FILEDATE=$(date +'%Y-%m-%d_%H%M%S')
 		BACKUP_FILE=$TEMP_DIR/$(basename $DIR)-$FILEDATE.tar.gz
-		tar -czf $BACKUP_FILE
+		tar -czf $BACKUP_FILE $DIR
 		EXIT_ERR=$?
 		# 0 = OK
 		if [ $EXIT_ERR -eq 0 ]
@@ -87,7 +87,6 @@ for DIR in `cat $DIR_LIST_FILE`;
 						log "Backup $DIR: OK"
 					else
 						log "Backup $DIR: s3cmd ERROR ($S3ERR)"
-				fi
 			else
 				log "Backup $DIR: ERROR ($EXIT_ERR)"
 		fi
@@ -96,6 +95,7 @@ for DIR in `cat $DIR_LIST_FILE`;
 			do
 				log "Paused, waiting for SIGCONT to resume"
     				sleep 10
+		done
 		done
 	done
 rm -rf $TEMP_DIR
