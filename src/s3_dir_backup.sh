@@ -80,7 +80,7 @@ for DIR in `cat $DIR_LIST_FILE`;
 		# 0 = OK
 		if [ $EXIT_ERR -eq 0 ]
 			then
-				s3cmd put --multipart-chunk-size-mb=100 --progress --recursive --reduced-redundancy $BACKUP_FILE s3://$BUCKET_NAME > /dev/null
+				s3cmd put --progress --recursive --reduced-redundancy $BACKUP_FILE s3://$BUCKET_NAME > /dev/null
 				S3ERR=$?
 				if [ $S3ERR -eq 0 ]
 					then
