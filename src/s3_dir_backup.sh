@@ -87,6 +87,7 @@ for DIR in `cat $DIR_LIST_FILE`;
 						log "Backup $DIR: OK"
 					else
 						log "Backup $DIR: s3cmd ERROR ($S3ERR)"
+				fi
 			else
 				log "Backup $DIR: ERROR ($EXIT_ERR)"
 		fi
