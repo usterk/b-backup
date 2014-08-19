@@ -20,36 +20,30 @@ s3cmd_put(){
 			log "File ${TO_SEND} does not exist"
 			return 1
 	fi
-	if [ -d "$TO_SEND" ]
+	FILEDATE=$(date +'%Y-%m-%d_%H%M%S')
+	log "Backing up $TO_SEND"
+	s3cmd_compress ${TO_SEND}
+	EXIT_ERR=$?
+	# 0 = OK
+	if [ $EXIT_ERR -eq 0 ]
 		then
-			FILEDATE=$(date +'%Y-%m-%d_%H%M%S')
-			log "Backing up $TO_SEND"
-			s3cmd_compress ${TO_SEND}
-			EXIT_ERR=$?
-			# 0 = OK
-			if [ $EXIT_ERR -eq 0 ]
+			if [ -f $BACKUP_FILE ]
 				then
-					if [ -f $BACKUP_FILE ]
+					s3cmd put --progress --recursive --reduced-redundancy $BACKUP_FILE s3://$BUCKET_NAME > /dev/null
+					S3ERR=$?
+					if [ $S3ERR -eq 0 ]
 						then
-							s3cmd put --progress --recursive --reduced-redundancy $BACKUP_FILE s3://$BUCKET_NAME > /dev/null
-							S3ERR=$?
-							if [ $S3ERR -eq 0 ]
-								then
-									log "Backup $TO_SEND: OK"
-								else
-									log "Backup $TO_SEND: s3cmd ERROR ($S3ERR)"
-									return 1
-							fi
+							log "Backup $TO_SEND: OK"
 						else
-							log "There is no BACKUP_FILE=$BACKUP_FILE"
+							log "Backup $TO_SEND: s3cmd ERROR ($S3ERR)"
+							return 1
 					fi
 				else
-					log "Backup $TO_SEND: compression ERROR ($EXIT_ERR)"
-					return 1
+					log "There is no BACKUP_FILE=$BACKUP_FILE"
 			fi
-			rm $BACKUP_FILE
 		else
-			log "$TO_SEND does not exist"
+			log "Backup $TO_SEND: compression ERROR ($EXIT_ERR)"
 			return 1
 	fi
+	rm $BACKUP_FILE
 }
