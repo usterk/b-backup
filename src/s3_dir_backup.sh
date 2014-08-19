@@ -18,8 +18,7 @@ DIR_LIST_FILE=/etc/b-backup/s3-dir-backup.list
 TMP=/
 BUCKET_NAME=b-backup
 
-DATE='date +"%Y-%m-%d %H:%M:%S:"'
-
+DATE="date +'%Y-%m-%d %H:%M:%S:'"
 if [ -f $CONF ]
 	then
 		source $CONF
