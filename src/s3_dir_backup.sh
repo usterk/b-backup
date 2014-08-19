@@ -28,7 +28,7 @@ fi
 TEMP_DIR=$TMP/s3-dir-backup$$
 mkdir -p $TEMP_DIR
 function log(){
-	echo "`$DATE` $*"
+	echo "$($DATE) $*"
 }
 log "My PID: $$"
 log "To pause use: kill -SIGHUP $$"
