@@ -18,7 +18,7 @@ DIR_LIST_FILE=/etc/b-backup/s3-dir-backup.list
 TMP=/
 BUCKET_NAME=b-backup
 
-DATE='date +%Y-%m-%d|%H:%M:%S:'
+DATE='date +%Y-%m-%d %H:%M:%S:'
 
 if [ -f $CONF ]
 	then
@@ -30,8 +30,6 @@ mkdir -p $TEMP_DIR
 function log(){
 	echo "`$DATE` $*"
 }
-
-DATE='date +%Y-%m-%d|%H:%M:%S:'
 log "My PID: $$"
 log "To pause use: kill -SIGHUP $$"
 

@@ -15,7 +15,7 @@ s3cmd_compress(){
 }
 s3cmd_put(){
 	TO_SEND=$1
-	if [ ! -f $TO_SEND ]
+	if [ ! -e ${TO_SEND} ]
 		then
 			log "File ${TO_SEND} does not exist"
 			return 1
