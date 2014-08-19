@@ -1,4 +1,6 @@
 #!/bin/bash
+source $(dirname $0)/lib/s3cmd_b-backup.sh
+
 EXIT=0
 trap "quit" SIGINT
 trap "quit" SIGQUIT
@@ -72,39 +74,16 @@ function pauza_cycle(){
 
 for DIR in `cat $DIR_LIST_FILE`;
 	do
-		if [ -d "$DIR" ]
+		s3cmd_put $DIR
+		ERR=$?
+		if [ $ERR -ne 0 ]
 			then
-				log "Backup directory $DIR"
-				FILEDATE=$(date +'%Y-%m-%d_%H%M%S')
-				BACKUP_FILE=$TEMP_DIR/$(basename $DIR)-$FILEDATE.tar.gz
-				tar -czf $BACKUP_FILE $DIR
-				EXIT_ERR=$?
-				# 0 = OK
-				if [ $EXIT_ERR -eq 0 ]
-					then
-						s3cmd put --progress --recursive --reduced-redundancy $BACKUP_FILE s3://$BUCKET_NAME > /dev/null
-						S3ERR=$?
-						if [ $S3ERR -eq 0 ]
-							then
-								log "Backup $DIR: OK"
-							else
-								log "Backup $DIR: s3cmd ERROR ($S3ERR)"
-								EXIT=1
-						fi
-					else
-						log "Backup $DIR: ERROR ($EXIT_ERR)"
-						EXIT=1
-				fi
-				rm $BACKUP_FILE
-				while [ "$PAUZA" = "true" ]
-					do
-						log "Paused, waiting for SIGCONT to resume"
-   		 				sleep 10
-				done
-			else
-				log "$DIR does not exist"
-				EXIT=1
+				EXIT=$ERR
 		fi
+		while [ "$PAUZA" = "true" ]
+			do
+				log "Paused, waiting for SIGCONT to resume"
+   				sleep 10
+		done
 	done
-rm -rf $TEMP_DIR
 exit $EXIT
